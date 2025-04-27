@@ -1,0 +1,59 @@
+name: Go CI - Build and Push Docker Image
+
+on:
+    push:
+      branches: [ "main" ]       # Run on pushes to the main branch
+      tags:
+        - 'v*.*.*'             # Run on version tags like v1.2.3
+    pull_request:
+      branches: [ "main" ]       # Run on pull requests targeting main (for CI checks)
+    workflow_dispatch:           # Allows manual triggering from the Actions tab
+
+jobs:
+  # ---- Build and Push Job ----
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+
+    # Grant permissions for actions to push to ghcr.io
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }} # ghcr.io/OWNER/REPO
+          # Generates tags based on event (branch, tag, sha)
+          # Removed 'type=ref,event=pr' as PR trigger is removed
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          # Always push since the triggers (main push, tag push) imply a push is desired
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Enable Docker layer caching using GitHub Actions cache
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
