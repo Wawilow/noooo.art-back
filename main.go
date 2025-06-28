@@ -77,6 +77,38 @@ func main() {
 
 		return c.JSON(r)
 	})
+	app.Get("/api/ascii", func(c *fiber.Ctx) error {
+		content, err := db.GetAscii()
+		if err != nil {
+			return err
+		}
+
+		type Cont struct {
+			Ascii      *string    `json:"ascii,omitempty"`
+			Author      *string    `json:"author,omitempty"`
+			Date        *time.Time `json:"date,omitempty"`
+		}
+		r := []Cont{}
+
+		for _, i := range *content {
+			r = append(r, Cont{
+				Ascii:      i.Ascii,
+				Author:      i.Author,
+				Date:        i.Date,
+			})
+		}
+
+		// r = append(r, Cont{
+		// 	Header:      stringPtr("Proof of Concept"),                                                               // Get *string
+		// 	HeaderLink:  stringPtr("https://spruethmagers.com/exhibitions/jon-rafman-proof-of-concept-los-angeles/"), // Get *string
+		// 	SubHeader:   stringPtr("ONE POINT FIVE STARS"),                                                           // Get *string
+		// 	Author:      stringPtr("Jon Rafman"),                                                                     // Get *string
+		// 	Date:        &now,                                                                                        // Get *time.Time from variable
+		// 	Description: stringPtr(descText),                                                                         // Get *string from variable holding the multi-line text
+		// })
+
+		return c.JSON(r)
+	})
 
 	log.Println("Starting server on :3000...")
 	err = app.Listen(":3000")

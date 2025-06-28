@@ -11,7 +11,7 @@ import (
 )
 
 type Articles struct {
-	ID          string     `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"` // Match UUID type
+	ID          string     `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
 	CreatedAt   time.Time  `json:"created_at"`
 	Header      *string    `json:"header"`
 	HeaderLink  *string    `json:"header_link"`
@@ -22,8 +22,19 @@ type Articles struct {
 }
 
 func (u *Articles) TableName() string {
-	// custom table name, this is default
 	return "prod.articles"
+}
+
+type ASCII struct {
+	ID          string     `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	CreatedAt   time.Time  `json:"created_at"`
+	Ascii      *string    `json:"ascii"`
+	Author      *string    `json:"author"`
+	Date        *time.Time `json:"date"`
+}
+
+func (u *ASCII) TableName() string {
+	return "prod.ascii"
 }
 
 type Grm struct {
@@ -59,4 +70,15 @@ func (g *Grm) GetArticles() (*[]Articles, error) {
 	}
 
 	return &foundArticle, nil
+}
+
+func (g *Grm) GetAscii() (*[]ASCII, error) {
+	var foundASCII []ASCII
+
+	r := g.DB.Raw("SELECT * FROM prod.ascii").Scan(&foundASCII)
+	if r.Error != nil {
+		return nil, r.Error
+	}
+
+	return &foundASCII, nil
 }
