@@ -1,21 +1,19 @@
-name: Go CI - Build and Push Docker Image
+name: back docker build
 
 on:
     push:
-      branches: [ "main" ]       # Run on pushes to the main branch
+      branches: [ "main" ]
       tags:
-        - 'v*.*.*'             # Run on version tags like v1.2.3
+        - 'v*.*.*'
     pull_request:
-      branches: [ "main" ]       # Run on pull requests targeting main (for CI checks)
-    workflow_dispatch:           # Allows manual triggering from the Actions tab
+      branches: [ "main" ]
+    workflow_dispatch:
 
 jobs:
-  # ---- Build and Push Job ----
   build-and-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
 
-    # Grant permissions for actions to push to ghcr.io
     permissions:
       contents: read
       packages: write
@@ -35,9 +33,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }} # ghcr.io/OWNER/REPO
-          # Generates tags based on event (branch, tag, sha)
-          # Removed 'type=ref,event=pr' as PR trigger is removed
+          images: ghcr.io/${{ github.repository }}
           tags: |
             type=schedule
             type=ref,event=branch
@@ -50,10 +46,8 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          # Always push since the triggers (main push, tag push) imply a push is desired
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Enable Docker layer caching using GitHub Actions cache
           cache-from: type=inline
           cache-to: type=inline,mode=max
